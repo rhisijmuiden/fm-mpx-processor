@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Pilot mark">
+  <defs>
+    <linearGradient id="pg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5CE1FF"/>
+      <stop offset="1" stop-color="#9D7BFF"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="#0B1222" stroke="url(#pg)" stroke-width="2"/>
+  <path d="M10 32 C 15 18, 20 18, 25 32 S 35 46, 40 32 S 50 18, 54 32" fill="none" stroke="url(#pg)" stroke-width="3.2" stroke-linecap="round"/>
+  <line x1="32" y1="12" x2="32" y2="52" stroke="#5CE1FF" stroke-width="2" stroke-linecap="round" opacity=".55"/>
+  <circle cx="32" cy="12" r="3" fill="#5CE1FF"/>
+</svg>

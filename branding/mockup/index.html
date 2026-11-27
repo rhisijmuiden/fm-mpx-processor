@@ -1,0 +1,777 @@
+<title>PILOT Control Room</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: fixed left admin rail + glass panels on a deep "control room" void; meters are the hero. */
+:root{
+  color-scheme:dark;
+  --void:#04070E; --deep:#070C18; --glass:rgba(20,30,54,.55); --glass2:rgba(32,46,80,.6);
+  --line:rgba(120,160,255,.14); --line2:rgba(120,160,255,.28);
+  --text:#E8F1FF; --text2:#A9B8D6; --text3:#6F81A6;
+  --ion:#5CE1FF; --plasma:#9D7BFF; --ok:#3DFFB0; --warn:#FFB547; --crit:#FF4D6A;
+  --left:#5CE1FF; --right:#FF7AC6;
+  --fd:"Unbounded","Segoe UI",system-ui,sans-serif;
+  --fb:"Manrope","Segoe UI",system-ui,sans-serif;
+  --fm:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --r:14px; --ease:cubic-bezier(.2,.8,.2,1);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--void);color:var(--text);font-family:var(--fb);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+   radial-gradient(900px 500px at 85% -10%,rgba(157,123,255,.16),transparent 60%),
+   radial-gradient(700px 500px at 10% 110%,rgba(92,225,255,.10),transparent 60%);}
+.grid-bg{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.35;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:48px 48px;mask-image:radial-gradient(circle at 60% 30%,#000 0,transparent 75%)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--ion);outline-offset:2px;border-radius:6px}
+.mono{font-family:var(--fm);font-variant-numeric:tabular-nums}
+.app{position:relative;z-index:1;display:grid;grid-template-columns:256px minmax(0,1fr);min-height:100%}
+
+/* Sidebar */
+.side{position:sticky;top:0;height:100vh;background:linear-gradient(180deg,rgba(7,12,24,.92),rgba(7,12,24,.75));border-right:1px solid var(--line);
+  backdrop-filter:blur(18px);display:flex;flex-direction:column;padding:20px 14px;gap:18px}
+.brand{display:flex;align-items:center;gap:12px;padding:4px 8px 10px}
+.brand svg{width:40px;height:40px;filter:drop-shadow(0 0 10px rgba(92,225,255,.45))}
+.brand b{font-family:var(--fd);font-weight:600;letter-spacing:.28em;font-size:17px;display:block}
+.brand small{font-family:var(--fm);font-size:9.5px;letter-spacing:.22em;color:var(--text3)}
+.navgrp{display:flex;flex-direction:column;gap:2px}
+.navlbl{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--text3);padding:8px 12px 6px}
+.nav a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;color:var(--text2);text-decoration:none;font-weight:600;font-size:14px;position:relative;transition:background .14s,color .14s}
+.nav a svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.nav a:hover{background:rgba(92,225,255,.06);color:var(--text)}
+.nav a.on{background:linear-gradient(90deg,rgba(92,225,255,.16),rgba(157,123,255,.06));color:var(--text);box-shadow:inset 0 0 0 1px rgba(92,225,255,.25)}
+.nav a.on svg{stroke:var(--ion);filter:drop-shadow(0 0 6px var(--ion))}
+.nav a .pill{margin-left:auto;font-family:var(--fm);font-size:10px;padding:2px 7px;border-radius:99px;background:rgba(61,255,176,.12);color:var(--ok)}
+.side-foot{margin-top:auto;display:flex;flex-direction:column;gap:10px}
+.onair{display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;background:rgba(255,77,106,.08);border:1px solid rgba(255,77,106,.3)}
+.onair i{width:10px;height:10px;border-radius:50%;background:var(--crit);box-shadow:0 0 12px var(--crit);animation:pulse 1.6s infinite}
+.onair b{font-family:var(--fd);font-size:11px;letter-spacing:.2em}
+.onair span{font-size:11.5px;color:var(--text2);display:block}
+@keyframes pulse{50%{opacity:.35}}
+.infobtn{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--line2);background:var(--glass);cursor:pointer;font-weight:600;font-size:13.5px;color:var(--text2)}
+.infobtn:hover{color:var(--text);border-color:var(--ion)}
+.infobtn .ver{margin-left:auto;font-family:var(--fm);font-size:11px;color:var(--ion)}
+.infobtn .dot{width:7px;height:7px;border-radius:50%;background:var(--warn);box-shadow:0 0 8px var(--warn)}
+
+/* Top bar */
+.main{min-width:0;display:flex;flex-direction:column}
+.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px max(24px,env(safe-area-inset-right,0px)) 14px 28px;
+  background:rgba(4,7,14,.7);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.top h1{font-family:var(--fd);font-weight:600;font-size:20px;letter-spacing:.02em;margin:0;text-wrap:balance}
+.top .crumb{font-size:12px;color:var(--text3);letter-spacing:.12em;text-transform:uppercase}
+.chips{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:6px 11px;border-radius:99px;border:1px solid var(--line2);background:var(--glass);font-size:12px;color:var(--text2);white-space:nowrap}
+.chip i{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.chip.w i{background:var(--warn);box-shadow:0 0 8px var(--warn)}
+.chip b{color:var(--text);font-family:var(--fm);font-weight:500}
+.lang{display:inline-flex;border:1px solid var(--line2);border-radius:99px;padding:3px;background:var(--deep)}
+.lang button{border:0;background:none;padding:4px 10px;border-radius:99px;font-size:11.5px;font-weight:700;letter-spacing:.08em;color:var(--text3);cursor:pointer}
+.lang button.on{background:var(--ion);color:#021018}
+
+.content{padding:24px max(24px,env(safe-area-inset-right,0px)) 40px 28px;display:flex;flex-direction:column;gap:20px}
+.view{display:none;flex-direction:column;gap:20px;animation:rise .45s var(--ease)}
+.view.on{display:flex}
+@keyframes rise{from{transform:translateY(8px);opacity:.4}to{transform:none;opacity:1}}
+
+/* Panels */
+.panel{position:relative;background:var(--glass);border:1px solid var(--line);border-radius:var(--r);padding:18px;backdrop-filter:blur(18px) saturate(140%);min-width:0}
+.panel::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;
+  background:linear-gradient(140deg,rgba(92,225,255,.35),transparent 30%,transparent 70%,rgba(157,123,255,.3));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.ph{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.ph h3{margin:0;font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--text2)}
+.ph .sub{font-size:12px;color:var(--text3)}
+.ph .r{margin-left:auto;display:flex;gap:8px;align-items:center}
+.row{display:grid;gap:20px}
+.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.c4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.dash-a{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
+.tag{font-family:var(--fm);font-size:10.5px;padding:3px 8px;border-radius:6px;border:1px solid var(--line2);color:var(--text2)}
+.tag.ok{color:var(--ok);border-color:rgba(61,255,176,.35);background:rgba(61,255,176,.07)}
+.tag.warn{color:var(--warn);border-color:rgba(255,181,71,.35);background:rgba(255,181,71,.07)}
+.tag.ion{color:var(--ion);border-color:rgba(92,225,255,.35);background:rgba(92,225,255,.07)}
+
+/* Signal chain */
+.chain{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding:6px 2px 10px;scrollbar-width:thin}
+.node{flex:none;width:118px;padding:12px;border-radius:12px;background:rgba(7,12,24,.7);border:1px solid var(--line2);cursor:pointer;transition:transform .2s var(--ease),border-color .2s;position:relative}
+.node:hover{transform:translateY(-3px);border-color:var(--ion)}
+.node .k{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text3)}
+.node .n{font-weight:700;font-size:13.5px;margin:3px 0 8px}
+.node .v{font-family:var(--fm);font-size:12px;color:var(--ion)}
+.node .gr{height:4px;border-radius:2px;background:rgba(255,255,255,.06);margin-top:8px;overflow:hidden}
+.node .gr span{display:block;height:100%;background:var(--grad,linear-gradient(90deg,var(--ion),var(--plasma)));width:30%}
+.node.byp{opacity:.45}
+.node.mpx{border-color:rgba(157,123,255,.5);box-shadow:0 0 0 1px rgba(157,123,255,.15),0 0 22px rgba(157,123,255,.15)}
+.node.out{border-color:rgba(61,255,176,.45)}
+.wire{flex:none;width:26px;align-self:center;height:2px;position:relative;background:var(--line2);overflow:hidden}
+.wire::after{content:"";position:absolute;inset:0;width:40%;background:linear-gradient(90deg,transparent,var(--ion),transparent);animation:flow 1.4s linear infinite}
+@keyframes flow{from{transform:translateX(-100%)}to{transform:translateX(260%)}}
+
+/* Meters */
+.bigread{display:flex;gap:16px;flex-wrap:wrap}
+.br{flex:1 1 120px;min-width:0;padding:12px 14px;border-radius:12px;background:rgba(7,12,24,.6);border:1px solid var(--line)}
+.br .k{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--text3)}
+.br .v{font-family:var(--fm);font-size:30px;font-weight:500;line-height:1.1;margin-top:4px;letter-spacing:-.02em}
+.br .v small{font-size:13px;color:var(--text3);margin-left:4px}
+.br .t{font-size:11.5px;color:var(--text3);margin-top:2px}
+.hbar{position:relative;height:14px;border-radius:7px;background:rgba(255,255,255,.05);overflow:hidden;margin-top:10px;border:1px solid var(--line)}
+.hbar .f{position:absolute;inset:0 auto 0 0;width:0;background:linear-gradient(90deg,#1BB7D8,var(--ion) 60%,var(--warn) 88%,var(--crit));background-size:var(--bw,600px) 100%;border-radius:7px;transition:width .08s linear}
+.hbar .pk{position:absolute;top:-2px;bottom:-2px;width:2px;background:#fff;box-shadow:0 0 8px #fff}
+.hbar .lim{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--crit)}
+.scale{display:flex;justify-content:space-between;font-family:var(--fm);font-size:10px;color:var(--text3);margin-top:4px}
+
+.vu{display:flex;gap:10px;height:220px;align-items:stretch}
+.vcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.vtrack{flex:1;width:100%;max-width:34px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid var(--line);position:relative;overflow:hidden}
+.vtrack .f{position:absolute;left:0;right:0;bottom:0;height:0;background:linear-gradient(0deg,#1BB7D8,var(--ion) 55%,var(--warn) 82%,var(--crit));background-size:100% 220px;background-position:bottom}
+.vtrack .f.l{background:linear-gradient(0deg,#1BB7D8 0,var(--left) 60%,var(--warn) 85%,var(--crit))}
+.vtrack .f.r{background:linear-gradient(0deg,#B24A8E 0,var(--right) 60%,var(--warn) 85%,var(--crit))}
+.vtrack .f.gr{top:0;bottom:auto;background:linear-gradient(180deg,var(--plasma),rgba(157,123,255,.3))}
+.vtrack .pk{position:absolute;left:3px;right:3px;height:2px;background:#fff;box-shadow:0 0 6px #fff;bottom:0}
+.vtrack .tick{position:absolute;left:0;right:0;height:1px;background:rgba(255,255,255,.08)}
+.vcol .k{font-size:10.5px;letter-spacing:.1em;color:var(--text3);font-weight:700}
+.vcol .n{font-family:var(--fm);font-size:11px;color:var(--text2)}
+
+canvas{display:block;width:100%;max-width:100%}
+.spec{height:200px}
+.gonio{aspect-ratio:1;max-width:220px;margin:0 auto}
+.lufsplot{height:120px}
+
+.gauge{position:relative;max-width:260px;margin:0 auto}
+.gauge svg{width:100%;height:auto;display:block}
+.gauge .read{text-align:center;margin-top:4px}
+.gauge .read b{font-family:var(--fm);font-size:34px;font-weight:500;letter-spacing:-.02em}
+.gauge .read small{display:block;font-size:11px;color:var(--text3);letter-spacing:.14em;text-transform:uppercase}
+
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--text3)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:3px;border-radius:2px}
+
+/* Forms */
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.fld{display:flex;flex-direction:column;gap:6px;min-width:0}
+.fld label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);font-weight:700}
+.inp{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line2);background:rgba(4,7,14,.6);font-family:var(--fm);font-size:13px;color:var(--text);transition:border-color .14s,box-shadow .14s}
+.inp:focus{outline:none;border-color:var(--ion);box-shadow:0 0 0 3px rgba(92,225,255,.15)}
+select.inp{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--text3) 50%),linear-gradient(135deg,var(--text3) 50%,transparent 50%);background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:30px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:10px;border:1px solid var(--line2);background:var(--glass2);font-weight:700;font-size:13px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn:hover{border-color:var(--ion);color:#fff}
+.btn.pri{background:linear-gradient(135deg,var(--ion),var(--plasma));border:0;color:#04101C;box-shadow:0 6px 24px rgba(92,225,255,.25)}
+.btn.pri:hover{box-shadow:0 8px 30px rgba(92,225,255,.45);color:#04101C}
+.btn.sm{padding:6px 11px;font-size:12px}
+.btn.ghost{background:none}
+.seg{display:inline-flex;padding:3px;border-radius:10px;background:rgba(4,7,14,.6);border:1px solid var(--line2);flex-wrap:wrap}
+.seg button{border:0;background:none;padding:6px 12px;border-radius:8px;font-size:12.5px;font-weight:700;color:var(--text3);cursor:pointer}
+.seg button.on{background:var(--glass2);color:var(--text);box-shadow:inset 0 0 0 1px rgba(92,225,255,.35)}
+.tgl{position:relative;width:40px;height:22px;flex:none}
+.tgl input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer;z-index:1}
+.tgl span{position:absolute;inset:0;border-radius:99px;background:rgba(255,255,255,.1);border:1px solid var(--line2);transition:.2s}
+.tgl span::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--text3);transition:.2s var(--ease)}
+.tgl input:checked+span{background:rgba(92,225,255,.25);border-color:var(--ion)}
+.tgl input:checked+span::after{left:20px;background:var(--ion);box-shadow:0 0 10px var(--ion)}
+.tline{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.tline:last-child{border-bottom:0}
+.tline .tx{flex:1;min-width:0}
+.tline .tx b{display:block;font-size:14px}
+.tline .tx span{font-size:12px;color:var(--text3)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:2px;background:linear-gradient(90deg,var(--ion) var(--p,50%),rgba(255,255,255,.1) var(--p,50%));outline-offset:6px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid var(--ion);box-shadow:0 0 10px var(--ion);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#fff;border:3px solid var(--ion);box-shadow:0 0 10px var(--ion);cursor:pointer}
+.sl{display:grid;grid-template-columns:90px minmax(0,1fr) 64px;align-items:center;gap:12px;padding:6px 0}
+.sl label{font-size:12px;color:var(--text2);font-weight:600}
+.sl output{font-family:var(--fm);font-size:12px;color:var(--ion);text-align:right}
+
+/* Processing bands */
+.bands{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.band{padding:14px 12px;border-radius:12px;background:rgba(7,12,24,.6);border:1px solid var(--line);display:flex;flex-direction:column;gap:10px;min-width:0}
+.band h4{margin:0;font-family:var(--fd);font-weight:600;font-size:13px;letter-spacing:.04em}
+.band .rng{font-family:var(--fm);font-size:10.5px;color:var(--text3)}
+.band .grm{height:120px;display:flex;gap:8px;justify-content:center}
+.band .grm .vtrack{max-width:22px}
+.band .sl{grid-template-columns:1fr;gap:4px;padding:2px 0}
+.band .sl div{display:flex;justify-content:space-between}
+.xover{height:140px}
+
+/* RDS */
+.lcd{position:relative;border-radius:14px;padding:22px 20px;background:radial-gradient(120% 140% at 50% 0%,#0E2236,#050A12 70%);border:1px solid rgba(92,225,255,.3);box-shadow:inset 0 0 40px rgba(92,225,255,.08),0 0 30px rgba(92,225,255,.08);overflow:hidden}
+.lcd::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0 1px,transparent 1px 3px);pointer-events:none}
+.lcd .ps{font-family:var(--fm);font-size:clamp(28px,6vw,52px);letter-spacing:.32em;color:var(--ion);text-shadow:0 0 18px rgba(92,225,255,.8);white-space:pre;font-weight:600}
+.lcd .rt{font-family:var(--fm);font-size:13px;color:#BFF3FF;opacity:.85;margin-top:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lcd .meta{display:flex;gap:14px;margin-top:14px;font-family:var(--fm);font-size:11px;color:var(--text3);flex-wrap:wrap}
+.lcd .meta b{color:var(--text2);font-weight:500}
+.grp{display:flex;gap:6px;flex-wrap:wrap}
+.grp span{font-family:var(--fm);font-size:11px;padding:5px 8px;border-radius:6px;background:rgba(157,123,255,.08);border:1px solid rgba(157,123,255,.3);color:#CDBDFF;transition:.15s}
+.grp span.hot{background:var(--plasma);color:#0A0420;box-shadow:0 0 12px var(--plasma)}
+.af{display:flex;gap:8px;flex-wrap:wrap}
+.af span{font-family:var(--fm);font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--line2);background:rgba(4,7,14,.6)}
+
+/* Outputs */
+.outc{display:flex;flex-direction:column;gap:12px}
+.outc .hd{display:flex;align-items:center;gap:12px}
+.outc .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:rgba(92,225,255,.1);border:1px solid rgba(92,225,255,.3);flex:none}
+.outc .ic svg{width:20px;height:20px;stroke:var(--ion);fill:none;stroke-width:1.7}
+.outc .hd b{display:block;font-size:15px}
+.outc .hd span{font-size:12px;color:var(--text3)}
+.outc .hd .tgl{margin-left:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:12.5px}
+.kv dt{color:var(--text3)} .kv dd{margin:0;font-family:var(--fm);color:var(--text2);text-align:right;min-width:0;overflow-wrap:anywhere}
+.path{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--text2)}
+.path .st{padding:8px 12px;border-radius:10px;border:1px solid var(--line2);background:rgba(7,12,24,.7)}
+.path .st b{display:block;font-size:13px;color:var(--text)}
+.path .ar{color:var(--ion)}
+
+/* Tables */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);font-weight:700;padding:8px 10px;border-bottom:1px solid var(--line2)}
+.tbl td{padding:11px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td.mono{font-size:12.5px}
+.tblwrap{overflow-x:auto}
+
+/* Modal */
+.scrim{position:fixed;inset:0;z-index:50;background:rgba(2,4,10,.7);backdrop-filter:blur(8px);display:grid;place-items:center;padding:20px}
+.modal{width:min(720px,100%);max-height:calc(100vh - 40px);overflow:auto;background:linear-gradient(180deg,rgba(16,24,44,.96),rgba(8,12,24,.96));border:1px solid var(--line2);border-radius:20px;padding:26px;box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 60px rgba(92,225,255,.12);animation:rise .35s var(--ease)}
+.modal .mh{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.modal .mh svg{width:52px;height:52px;filter:drop-shadow(0 0 14px rgba(92,225,255,.5))}
+.modal .mh h2{margin:0;font-family:var(--fd);font-weight:600;font-size:22px;letter-spacing:.2em}
+.modal .mh span{font-size:12px;color:var(--text3)}
+.modal .x{margin-left:auto;border:1px solid var(--line2);background:none;width:34px;height:34px;border-radius:10px;cursor:pointer;color:var(--text2);font-size:18px}
+.prog{height:8px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden;margin-top:10px}
+.prog span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ion),var(--plasma));box-shadow:0 0 12px var(--ion);transition:width .2s}
+.upd{padding:14px;border-radius:12px;border:1px solid rgba(255,181,71,.35);background:rgba(255,181,71,.06);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.upd .tx{flex:1;min-width:200px}
+.chlog{font-size:13px;color:var(--text2);margin:8px 0 0;padding-left:18px}
+.note{font-size:12px;color:var(--text3)}
+.demo{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:40;font-size:11px;font-family:var(--fm);color:var(--text3);background:rgba(4,7,14,.8);border:1px solid var(--line);padding:6px 10px;border-radius:8px}
+
+@media (max-width:1200px){.c4{grid-template-columns:repeat(2,minmax(0,1fr))}.bands{grid-template-columns:repeat(3,minmax(0,1fr))}.dash-a{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:900px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .side{position:sticky;top:0;z-index:20;height:auto;flex-direction:row;align-items:center;padding:10px max(16px,env(safe-area-inset-left,0px));gap:10px;overflow-x:auto}
+  .brand{padding:0}.brand div{display:none}
+  .navgrp{flex-direction:row}.navlbl,.side-foot .onair{display:none}
+  .nav a{padding:8px 10px;white-space:nowrap}.nav a span.t{display:none}.nav a .pill{display:none}
+  .side-foot{margin:0 0 0 auto;flex-direction:row}
+  .infobtn .lbl,.infobtn .ver{display:none}
+  .nav{display:flex;gap:2px}
+  .top{position:static;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .content{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .c2,.c3{grid-template-columns:minmax(0,1fr)}
+  .chips{margin-left:0}
+}
+@media (max-width:560px){.c4,.bands{grid-template-columns:minmax(0,1fr)}.sl{grid-template-columns:80px minmax(0,1fr) 56px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="grid-bg"></div>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="pg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5CE1FF"/><stop offset="1" stop-color="#9D7BFF"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="16" fill="#0B1222" stroke="url(#pg)" stroke-width="2"/><path d="M10 32 C 15 18, 20 18, 25 32 S 35 46, 40 32 S 50 18, 54 32" fill="none" stroke="url(#pg)" stroke-width="3.2" stroke-linecap="round"/><line x1="32" y1="12" x2="32" y2="52" stroke="#5CE1FF" stroke-width="2" stroke-linecap="round" opacity=".55"/><circle cx="32" cy="12" r="3" fill="#5CE1FF"/></svg>
+      <div><b>PILOT</b><small>MPX · RDS · DSP</small></div>
+    </div>
+    <nav class="nav">
+      <div class="navgrp">
+        <div class="navlbl" data-i>On air</div>
+        <a href="#dashboard" data-v="dashboard"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><span class="t" data-i>Dashboard</span><span class="pill">LIVE</span></a>
+        <a href="#input" data-v="input"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 16 0M7.5 12a4.5 4.5 0 0 1 9 0"/><circle cx="12" cy="12" r="1.5"/><path d="M12 14v7"/></svg><span class="t" data-i>Input</span></a>
+        <a href="#processing" data-v="processing"><svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg><span class="t" data-i>Processing</span></a>
+        <a href="#stereo" data-v="stereo"><svg viewBox="0 0 24 24"><circle cx="8" cy="12" r="5"/><circle cx="16" cy="12" r="5"/></svg><span class="t" data-i>Stereo &amp; MPX</span></a>
+        <a href="#rds" data-v="rds"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h4M7 14h10"/></svg><span class="t">RDS / RDS2</span></a>
+        <a href="#outputs" data-v="outputs"><svg viewBox="0 0 24 24"><path d="M12 3v10M8 9l4 4 4-4"/><path d="M5 15v4h14v-4"/></svg><span class="t" data-i>Outputs</span></a>
+      </div>
+      <div class="navgrp">
+        <div class="navlbl" data-i>System</div>
+        <a href="#backup" data-v="backup"><svg viewBox="0 0 24 24"><path d="M4 7c0-2 4-3 8-3s8 1 8 3-4 3-8 3-8-1-8-3z"/><path d="M4 7v10c0 2 4 3 8 3s8-1 8-3V7M4 12c0 2 4 3 8 3s8-1 8-3"/></svg><span class="t" data-i>Backups</span></a>
+        <a href="#mail" data-v="mail"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><span class="t" data-i>Mail server</span></a>
+      </div>
+    </nav>
+    <div class="side-foot">
+      <div class="onair"><i></i><div><b>ON AIR</b><span>Elenos Indium · 75 kHz</span></div></div>
+      <button class="infobtn" id="openInfo"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg><span class="lbl" data-i>Info &amp; updates</span><span class="dot" title="Update available"></span><span class="ver">v0.1.0</span></button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="top">
+      <div><div class="crumb" id="crumb">Program 1</div><h1 id="title">Dashboard</h1></div>
+      <div class="chips">
+        <span class="chip"><i></i><span data-i>Input</span> <b>AAC 128k</b></span>
+        <span class="chip"><i></i>MicroMPX <b>192.168.1.67</b></span>
+        <span class="chip w"><i></i><span data-i>Channel</span> <b id="chanChip">production</b></span>
+        <span class="chip"><b id="clock">00:00:00</b></span>
+        <div class="lang" role="group" aria-label="Language"><button data-l="en" class="on">EN</button><button data-l="nl">NL</button></div>
+      </div>
+    </header>
+
+    <main class="content">
+
+<!-- DASHBOARD -->
+<section class="view" id="v-dashboard">
+  <div class="panel">
+    <div class="ph"><h3 data-i>Signal chain</h3><span class="sub" data-i>Click a stage to open its settings</span><div class="r"><span class="tag ok">48 kHz · 32-bit float</span><span class="tag ion">latency 7.4 ms</span></div></div>
+    <div class="chain" id="chain"></div>
+  </div>
+
+  <div class="row c4">
+    <div class="panel">
+      <div class="ph"><h3 data-i>Peak deviation</h3><div class="r"><span class="tag ok" id="devTag">within limit</span></div></div>
+      <div class="gauge"><svg viewBox="0 0 200 120" id="devG"></svg><div class="read"><b id="devV">0.0</b><small>kHz · limit 75</small></div></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><h3 data-i>MPX power</h3><div class="r"><span class="tag ion">ITU-R BS.412</span></div></div>
+      <div class="gauge"><svg viewBox="0 0 200 120" id="mpxG"></svg><div class="read"><b id="mpxV">0.0</b><small>dBr · limit +3.0</small></div></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><h3 data-i>Loudness</h3><div class="r"><span class="tag">EBU R128</span></div></div>
+      <div class="bigread">
+        <div class="br"><div class="k" data-i>Momentary</div><div class="v" id="lufsM">-9.1<small>LUFS</small></div></div>
+        <div class="br"><div class="k" data-i>Short-term</div><div class="v" id="lufsS">-9.4<small>LUFS</small></div></div>
+      </div>
+      <div class="bigread" style="margin-top:10px">
+        <div class="br"><div class="k" data-i>Integrated</div><div class="v" id="lufsI">-9.6<small>LUFS</small></div><div class="t" data-i>target −9.0 · LRA 3.1 LU</div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph"><h3 data-i>Stereo image</h3><div class="r"><span class="tag mono" id="corr">+0.62</span></div></div>
+      <canvas class="gonio" id="gonio"></canvas>
+    </div>
+  </div>
+
+  <div class="row dash-a">
+    <div class="panel">
+      <div class="ph"><h3 data-i>MPX spectrum</h3><span class="sub">0 – 64 kHz</span>
+        <div class="r legend"><span><i style="background:var(--ion)"></i>L+R</span><span><i style="background:#fff"></i>Pilot 19k</span><span><i style="background:var(--right)"></i>L−R 38k</span><span><i style="background:var(--plasma)"></i>RDS 57k</span></div></div>
+      <canvas class="spec" id="spec"></canvas>
+      <div class="row c4" style="margin-top:14px;gap:12px">
+        <div class="br"><div class="k" data-i>Pilot injection</div><div class="v" style="font-size:22px">9.0<small>%</small></div><div class="t">6.75 kHz · phase locked</div></div>
+        <div class="br"><div class="k" data-i>RDS injection</div><div class="v" style="font-size:22px">4.0<small>%</small></div><div class="t">3.0 kHz · 11.4 groups/s</div></div>
+        <div class="br"><div class="k" data-i>Stereo separation</div><div class="v" style="font-size:22px">&gt;58<small>dB</small></div><div class="t">1 kHz reference</div></div>
+        <div class="br"><div class="k" data-i>Over-limit events</div><div class="v" style="font-size:22px;color:var(--ok)">0</div><div class="t" data-i>last 24 h</div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph"><h3 data-i>Levels</h3><span class="sub">dBFS</span></div>
+      <div class="vu" id="vuDash"></div>
+      <div class="ph" style="margin:16px 0 8px"><h3 data-i>Loudness history</h3><span class="sub" data-i>last 60 s</span></div>
+      <canvas class="lufsplot" id="lufsPlot"></canvas>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="ph"><h3 data-i>Now on air</h3><div class="r"><span class="tag" style="color:#CDBDFF;border-color:rgba(157,123,255,.4)">RDS2</span></div></div>
+    <div class="lcd"><div class="ps" id="psDash">RADIO 1 </div><div class="rt" id="rtDash">Now: Dua Lipa – Houdini · radio1.example</div>
+      <div class="meta"><span>PI <b>8F3A</b></span><span>PTY <b>10 Pop Music</b></span><span>TP <b>on</b></span><span>TA <b>off</b></span><span>AF <b>3</b></span><span>CT <b>sync</b></span></div></div>
+  </div>
+</section>
+
+<!-- INPUT -->
+<section class="view" id="v-input">
+  <div class="row c2">
+    <div class="panel">
+      <div class="ph"><h3 data-i>Primary source</h3><div class="r"><span class="tag ok" data-i>connected</span></div></div>
+      <div class="fgrid">
+        <div class="fld" style="grid-column:1/-1"><label for="ice1">Icecast URL</label><input class="inp" id="ice1" value="https://stream.example.nl:8000/radio1.aac"></div>
+        <div class="fld"><label for="cod1" data-i>Codec</label><select class="inp" id="cod1"><option>Auto detect</option><option selected>AAC / HE-AAC</option><option>MP3</option></select></div>
+        <div class="fld"><label for="buf1" data-i>Buffer</label><select class="inp" id="buf1"><option>1.0 s</option><option selected>2.0 s</option><option>4.0 s</option></select></div>
+      </div>
+      <div class="kv" style="margin-top:16px"><dt data-i>Stream</dt><dd>AAC-LC 128 kbit/s · 44.1 kHz → 48 kHz SRC</dd><dt data-i>Uptime</dt><dd>3 d 14 h 22 m</dd><dt data-i>Buffer fill</dt><dd>1.94 s</dd><dt data-i>Reconnects (24 h)</dt><dd>0</dd></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><h3 data-i>Fallback &amp; silence detection</h3></div>
+      <div class="fld"><label for="ice2" data-i>Backup stream</label><input class="inp" id="ice2" value="https://backup.example.nl:8000/radio1.mp3"></div>
+      <div class="tline" style="margin-top:8px"><div class="tx"><b data-i>Switch to backup on silence</b><span data-i>Silence below −45 dBFS for 10 s</span></div><label class="tgl"><input type="checkbox" id="t-sil" checked><span></span></label></div>
+      <div class="tline"><div class="tx"><b data-i>Play local fallback file</b><span>/var/lib/pilot/fallback.wav</span></div><label class="tgl"><input type="checkbox" id="t-fb" checked><span></span></label></div>
+      <div class="tline"><div class="tx"><b data-i>Email alert on source change</b><span data-i>Uses the mail server settings</span></div><label class="tgl"><input type="checkbox" id="t-ma" checked><span></span></label></div>
+    </div>
+  </div>
+</section>
+
+<!-- PROCESSING -->
+<section class="view" id="v-processing">
+  <div class="panel">
+    <div class="ph"><h3 data-i>Preset</h3>
+      <div class="seg" id="presetSeg"><button class="on">Pilot Pop</button><button>Smooth AC</button><button>Dance Loud</button><button>Talk</button><button data-i>Custom</button></div>
+      <div class="r"><button class="btn sm ghost" data-i>Compare A/B</button><button class="btn sm pri" data-i>Save preset</button></div></div>
+    <div class="chain" id="chain2"></div>
+  </div>
+  <div class="row c3">
+    <div class="panel">
+      <div class="ph"><h3>AGC</h3><span class="sub" data-i>Wideband, slow</span><div class="r"><label class="tgl"><input type="checkbox" id="t-agc" checked><span></span></label></div></div>
+      <div class="sl"><label for="agc1" data-i>Target</label><input type="range" id="agc1" min="-30" max="0" value="-16"><output>-16 dB</output></div>
+      <div class="sl"><label for="agc2" data-i>Max gain</label><input type="range" id="agc2" min="0" max="24" value="12"><output>12 dB</output></div>
+      <div class="sl"><label for="agc3" data-i>Release</label><input type="range" id="agc3" min="1" max="20" value="6"><output>6 s</output></div>
+      <div class="sl"><label for="agc4" data-i>Gate</label><input type="range" id="agc4" min="-60" max="-20" value="-42"><output>-42 dB</output></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><h3 data-i>Pre-emphasis &amp; limiter</h3></div>
+      <div class="tline"><div class="tx"><b data-i>Pre-emphasis</b><span data-i>Europe 50 µs · USA 75 µs</span></div><div class="seg"><button class="on">50 µs</button><button>75 µs</button><button data-i>Off</button></div></div>
+      <div class="sl"><label for="lim1" data-i>Ceiling</label><input type="range" id="lim1" min="-6" max="0" step=".1" value="-0.3"><output>-0.3 dB</output></div>
+      <div class="sl"><label for="lim2" data-i>Lookahead</label><input type="range" id="lim2" min="0" max="10" step=".5" value="3"><output>3 ms</output></div>
+      <div class="sl"><label for="lim3" data-i>HF protect</label><input type="range" id="lim3" min="0" max="100" value="60"><output>60 %</output></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><h3 data-i>Final clipper</h3><span class="sub" data-i>Distortion-controlled</span></div>
+      <div class="sl"><label for="clp1" data-i>Drive</label><input type="range" id="clp1" min="0" max="6" step=".1" value="1.8"><output>1.8 dB</output></div>
+      <div class="sl"><label for="clp2" data-i>Bass clip</label><input type="range" id="clp2" min="0" max="100" value="35"><output>35 %</output></div>
+      <div class="sl"><label for="clp3" data-i>Oversampling</label><input type="range" id="clp3" min="1" max="4" value="4"><output>8×</output></div>
+      <p class="note" data-i>The clipper runs after pre-emphasis so peaks stay inside 75 kHz deviation without audible pumping.</p>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="ph"><h3 data-i>Multiband compressor</h3><span class="sub" data-i>5 bands · live gain reduction</span><div class="r"><span class="tag ion" data-i>linked stereo</span></div></div>
+    <canvas class="xover" id="xover"></canvas>
+    <div class="bands" id="bands" style="margin-top:14px"></div>
+  </div>
+</section>
+
+<!-- STEREO / MPX -->
+<section class="view" id="v-stereo">
+  <div class="row c2">
+    <div class="panel">
+      <div class="ph"><h3 data-i>Stereo encoder</h3><div class="r"><span class="tag ok" data-i>pilot locked</span></div></div>
+      <div class="tline"><div class="tx"><b data-i>Mode</b></div><div class="seg"><button class="on">Stereo</button><button>Mono</button><button data-i>Auto (silence → mono)</button></div></div>
+      <div class="sl"><label for="st1" data-i>Pilot level</label><input type="range" id="st1" min="6" max="12" step=".1" value="9"><output>9.0 %</output></div>
+      <div class="sl"><label for="st2" data-i>Pilot phase</label><input type="range" id="st2" min="-10" max="10" step=".1" value="0"><output>0.0°</output></div>
+      <div class="sl"><label for="st3" data-i>Width</label><input type="range" id="st3" min="0" max="150" value="110"><output>110 %</output></div>
+      <div class="sl"><label for="st4" data-i>Low-pass</label><input type="range" id="st4" min="14" max="17" step=".1" value="15"><output>15.0 kHz</output></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><h3 data-i>MPX safety limits</h3><div class="r"><span class="tag warn" data-i>hard limits</span></div></div>
+      <div class="sl"><label for="mx1" data-i>Max deviation</label><input type="range" id="mx1" min="50" max="100" step=".5" value="75"><output>75.0 kHz</output></div>
+      <div class="sl"><label for="mx2" data-i>MPX power</label><input type="range" id="mx2" min="-3" max="6" step=".1" value="3"><output>+3.0 dBr</output></div>
+      <div class="tline"><div class="tx"><b data-i>BS.412 MPX power limiter</b><span data-i>Integrates over 60 s, reduces gain smoothly</span></div><label class="tgl"><input type="checkbox" id="t-412" checked><span></span></label></div>
+      <div class="tline"><div class="tx"><b data-i>Composite clipper</b><span data-i>Last-resort peak control on the MPX signal</span></div><label class="tgl"><input type="checkbox" id="t-cc" checked><span></span></label></div>
+      <div class="tline"><div class="tx"><b data-i>Protect pilot &amp; RDS</b><span data-i>Notch filters keep clipper products out of 19 kHz and 57 kHz</span></div><label class="tgl"><input type="checkbox" id="t-pr" checked><span></span></label></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="ph"><h3 data-i>Deviation (live)</h3><span class="sub">kHz</span></div>
+    <div class="hbar"><div class="f" id="devBar"></div><div class="pk" id="devPk"></div><div class="lim" style="left:75%"></div></div>
+    <div class="scale"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+    <div class="ph" style="margin:18px 0 0"><h3 data-i>MPX power (60 s)</h3><span class="sub">dBr</span></div>
+    <div class="hbar"><div class="f" id="mpxBar"></div><div class="lim" style="left:66.6%"></div></div>
+    <div class="scale"><span>-6</span><span>-3</span><span>0</span><span>+3</span><span>+6</span><span>+9</span></div>
+  </div>
+</section>
+
+<!-- RDS -->
+<section class="view" id="v-rds">
+  <div class="panel">
+    <div class="ph"><h3 data-i>Receiver preview</h3><span class="sub" data-i>What a car radio shows right now</span><div class="r"><span class="tag ok">RDS · RDS2</span></div></div>
+    <div class="lcd"><div class="ps" id="psRds">RADIO 1 </div><div class="rt" id="rtRds">Now: Dua Lipa – Houdini · radio1.example</div>
+      <div class="meta"><span>PI <b>8F3A</b></span><span>PTY <b>10 Pop Music</b></span><span>ECC <b>E3</b></span><span>RT+ <b>ARTIST / TITLE</b></span><span>RDS2 <b>station logo</b></span></div></div>
+    <div class="ph" style="margin:16px 0 10px"><h3 data-i>Group sequence</h3><span class="sub" data-i>live transmit order</span></div>
+    <div class="grp" id="grp"></div>
+  </div>
+  <div class="row c2">
+    <div class="panel">
+      <div class="ph"><h3 data-i>Station identity</h3></div>
+      <div class="fgrid">
+        <div class="fld"><label for="r-ps">PS (8)</label><input class="inp" id="r-ps" maxlength="8" value="RADIO 1"></div>
+        <div class="fld"><label for="r-pi">PI</label><input class="inp" id="r-pi" value="8F3A"></div>
+        <div class="fld"><label for="r-pty">PTY</label><select class="inp" id="r-pty"><option>1 News</option><option>5 Education</option><option selected>10 Pop Music</option><option>11 Rock Music</option><option>15 Other Music</option></select></div>
+        <div class="fld"><label for="r-ecc">ECC</label><input class="inp" id="r-ecc" value="E3"></div>
+      </div>
+      <div class="tline" style="margin-top:8px"><div class="tx"><b>TP</b><span data-i>Traffic programme</span></div><label class="tgl"><input type="checkbox" id="t-tp" checked><span></span></label></div>
+      <div class="tline"><div class="tx"><b>TA</b><span data-i>Traffic announcement now</span></div><label class="tgl"><input type="checkbox" id="t-ta"><span></span></label></div>
+      <div class="tline"><div class="tx"><b>CT</b><span data-i>Clock time from NTP</span></div><label class="tgl"><input type="checkbox" id="t-ct" checked><span></span></label></div>
+      <div class="fld" style="margin-top:10px"><label data-i>Alternative frequencies</label><div class="af"><span>98.4</span><span>101.2</span><span>104.7</span><button class="btn sm ghost" data-i>+ Add</button></div></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><h3 data-i>Dynamic RadioText</h3><div class="r"><span class="tag ion" data-i>from stream metadata</span></div></div>
+      <div class="fld"><label for="r-tpl" data-i>Template</label><input class="inp" id="r-tpl" value="Now: {artist} – {title} · radio1.example"></div>
+      <div class="fld" style="margin-top:12px"><label for="r-idle" data-i>When no metadata</label><input class="inp" id="r-idle" value="Radio 1 · the best hits non-stop"></div>
+      <div class="tline" style="margin-top:8px"><div class="tx"><b>RT+</b><span data-i>Tag artist and title for receivers</span></div><label class="tgl"><input type="checkbox" id="t-rtp" checked><span></span></label></div>
+      <div class="tline"><div class="tx"><b data-i>Dynamic PS</b><span data-i>Scroll artist in PS (not recommended while driving)</span></div><label class="tgl"><input type="checkbox" id="t-dps"><span></span></label></div>
+      <div class="tline"><div class="tx"><b data-i>RDS2 station logo</b><span>logo-radio1.png · 2 kB</span></div><label class="tgl"><input type="checkbox" id="t-r2" checked><span></span></label></div>
+      <div class="sl" style="margin-top:6px"><label for="r-inj" data-i>Injection</label><input type="range" id="r-inj" min="1" max="10" step=".5" value="4"><output>4.0 %</output></div>
+    </div>
+  </div>
+</section>
+
+<!-- OUTPUTS -->
+<section class="view" id="v-outputs">
+  <div class="panel">
+    <div class="ph"><h3 data-i>Transmission path</h3></div>
+    <div class="path"><div class="st"><b>PILOT</b>Debian 13 LXC</div><span class="ar">→</span><div class="st"><b>MicroMPX</b>UDP · 320 kbit/s</div><span class="ar">→</span><div class="st"><b>Phantomtronics uMPX</b>192.168.1.67</div><span class="ar">→</span><div class="st"><b>BNC MPX</b>composite</div><span class="ar">→</span><div class="st"><b>Elenos Indium</b>FM TX</div><span class="ar">↺</span><div class="st"><b>Deva DB45</b><span data-i>off-air monitor</span></div></div>
+  </div>
+  <div class="row c2">
+    <div class="panel outc"><div class="hd"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 12h3l2-6 3 12 2-6h6"/></svg></div><div><b>MicroMPX</b><span data-i>To uMPX decoder at the transmitter</span></div><label class="tgl"><input type="checkbox" id="o1" checked><span></span></label></div>
+      <dl class="kv"><dt data-i>Target</dt><dd>192.168.1.67 : 9000</dd><dt data-i>Quality</dt><dd>320 kbit/s</dd><dt data-i>Packet loss</dt><dd style="color:var(--ok)">0.00 %</dd><dt data-i>Round trip</dt><dd>4.1 ms</dd></dl></div>
+    <div class="panel outc"><div class="hd"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="2"/><path d="M7 17v3M17 17v3"/></svg></div><div><b data-i>Sound card</b><span data-i>Composite MPX at 192 kHz</span></div><label class="tgl"><input type="checkbox" id="o2"><span></span></label></div>
+      <dl class="kv"><dt data-i>Device</dt><dd>hw:1,0 · USB 192k</dd><dt data-i>Output level</dt><dd>+0.0 dB</dd><dt data-i>Signal</dt><dd>MPX</dd></dl></div>
+    <div class="panel outc"><div class="hd"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 20v-8M8 8a6 6 0 0 1 8 0M5 5a10 10 0 0 1 14 0"/></svg></div><div><b>SDR</b><span data-i>Test transmitter (low power)</span></div><label class="tgl"><input type="checkbox" id="o3"><span></span></label></div>
+      <dl class="kv"><dt data-i>Device</dt><dd>HackRF One</dd><dt data-i>Frequency</dt><dd>107.9 MHz</dd><dt data-i>Gain</dt><dd>0 dB</dd></dl></div>
+    <div class="panel outc"><div class="hd"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M6 6a8 8 0 0 0 0 12M18 6a8 8 0 0 1 0 12"/></svg></div><div><b>Stream</b><span data-i>Processed audio back to Icecast</span></div><label class="tgl"><input type="checkbox" id="o4" checked><span></span></label></div>
+      <dl class="kv"><dt data-i>Mount</dt><dd>/radio1-processed.aac</dd><dt data-i>Listeners</dt><dd>2</dd><dt data-i>Codec</dt><dd>HE-AAC v2 · 96k</dd></dl></div>
+  </div>
+</section>
+
+<!-- BACKUP -->
+<section class="view" id="v-backup">
+  <div class="row c3">
+    <div class="panel"><div class="ph"><h3 data-i>Last backup</h3></div><div class="bigread"><div class="br"><div class="v" style="font-size:24px">03:00</div><div class="t" data-i>today · incremental · 184 kB</div></div></div></div>
+    <div class="panel"><div class="ph"><h3 data-i>Schedule</h3></div><div class="kv"><dt data-i>Full</dt><dd data-i>Sunday 02:00</dd><dt data-i>Incremental</dt><dd data-i>Daily 03:00</dd><dt data-i>Keep</dt><dd data-i>8 full · 30 incremental</dd></div></div>
+    <div class="panel"><div class="ph"><h3 data-i>Run now</h3></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn pri" data-i>Full backup</button><button class="btn" data-i>Incremental</button></div></div>
+  </div>
+  <div class="panel">
+    <div class="ph"><h3 data-i>Remote locations</h3><div class="r"><button class="btn sm" data-i>+ Add location</button></div></div>
+    <div class="tblwrap"><table class="tbl"><thead><tr><th data-i>Name</th><th data-i>Protocol</th><th>Host</th><th data-i>Path</th><th>Status</th><th></th></tr></thead><tbody>
+      <tr><td>NAS kantoor</td><td><span class="tag ion">SCP</span></td><td class="mono">nas.local:22</td><td class="mono">/backups/pilot</td><td><span class="tag ok">OK</span></td><td><button class="btn sm ghost" data-i>Test</button></td></tr>
+      <tr><td>Offsite</td><td><span class="tag ion">FTPS</span></td><td class="mono">ftp.example.nl:990</td><td class="mono">/pilot</td><td><span class="tag ok">OK</span></td><td><button class="btn sm ghost" data-i>Test</button></td></tr>
+      <tr><td>Legacy</td><td><span class="tag">FTP</span></td><td class="mono">10.0.0.12:21</td><td class="mono">/dump</td><td><span class="tag warn" data-i>unencrypted</span></td><td><button class="btn sm ghost" data-i>Test</button></td></tr>
+    </tbody></table></div>
+  </div>
+  <div class="panel">
+    <div class="ph"><h3 data-i>Restore points</h3><span class="sub" data-i>from all remote locations</span></div>
+    <div class="tblwrap"><table class="tbl"><thead><tr><th data-i>Date</th><th>Type</th><th data-i>Size</th><th data-i>Location</th><th></th></tr></thead><tbody>
+      <tr><td class="mono">2026-11-27 03:00</td><td><span class="tag" data-i>incremental</span></td><td class="mono">184 kB</td><td>NAS kantoor</td><td><button class="btn sm" data-i>Restore</button></td></tr>
+      <tr><td class="mono">2026-11-26 03:00</td><td><span class="tag" data-i>incremental</span></td><td class="mono">201 kB</td><td>NAS kantoor</td><td><button class="btn sm" data-i>Restore</button></td></tr>
+      <tr><td class="mono">2026-11-23 02:00</td><td><span class="tag ion">full</span></td><td class="mono">4.2 MB</td><td>Offsite</td><td><button class="btn sm" data-i>Restore</button></td></tr>
+    </tbody></table></div>
+  </div>
+</section>
+
+<!-- MAIL -->
+<section class="view" id="v-mail">
+  <div class="row c2">
+    <div class="panel">
+      <div class="ph"><h3 data-i>SMTP server</h3><div class="r"><span class="tag ok">TLS 1.3</span></div></div>
+      <div class="fgrid">
+        <div class="fld"><label for="m1">Host</label><input class="inp" id="m1" value="smtp.example.nl"></div>
+        <div class="fld"><label for="m2">Port</label><input class="inp" id="m2" value="587"></div>
+        <div class="fld"><label for="m3" data-i>Encryption</label><select class="inp" id="m3"><option selected>STARTTLS</option><option>SSL/TLS (465)</option><option data-i>None</option></select></div>
+        <div class="fld"><label for="m4" data-i>Authentication</label><select class="inp" id="m4"><option>PLAIN / LOGIN</option><option>OAuth2 (XOAUTH2)</option><option data-i>None</option></select></div>
+        <div class="fld"><label for="m5" data-i>Username</label><input class="inp" id="m5" value="pilot@example.nl"></div>
+        <div class="fld"><label for="m6" data-i>Password</label><input class="inp" id="m6" type="password" value="xxxxxxxxxxxx"></div>
+        <div class="fld"><label for="m7" data-i>From address</label><input class="inp" id="m7" value="PILOT &lt;pilot@example.nl&gt;"></div>
+        <div class="fld"><label for="m8" data-i>Send alerts to</label><input class="inp" id="m8" value="techniek@example.nl"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap"><button class="btn pri" data-i>Send test email</button><button class="btn" data-i>Save</button></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><h3 data-i>Alerts</h3></div>
+      <div class="tline"><div class="tx"><b data-i>Input lost or silent</b></div><label class="tgl"><input type="checkbox" id="a1" checked><span></span></label></div>
+      <div class="tline"><div class="tx"><b data-i>Over-deviation or MPX power exceeded</b></div><label class="tgl"><input type="checkbox" id="a2" checked><span></span></label></div>
+      <div class="tline"><div class="tx"><b data-i>MicroMPX link down</b></div><label class="tgl"><input type="checkbox" id="a3" checked><span></span></label></div>
+      <div class="tline"><div class="tx"><b data-i>Backup failed</b></div><label class="tgl"><input type="checkbox" id="a4" checked><span></span></label></div>
+      <div class="tline"><div class="tx"><b data-i>Update available</b></div><label class="tgl"><input type="checkbox" id="a5"><span></span></label></div>
+      <p class="note" data-i>Certificates are verified by default. Use a self-signed certificate only on a trusted network.</p>
+    </div>
+  </div>
+</section>
+
+    </main>
+  </div>
+</div>
+
+<!-- INFO MODAL -->
+<div class="scrim" id="info" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+    <div class="mh">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="16" fill="#0B1222" stroke="url(#pg)" stroke-width="2"/><path d="M10 32 C 15 18, 20 18, 25 32 S 35 46, 40 32 S 50 18, 54 32" fill="none" stroke="url(#pg)" stroke-width="3.2" stroke-linecap="round"/><line x1="32" y1="12" x2="32" y2="52" stroke="#5CE1FF" stroke-width="2" stroke-linecap="round" opacity=".55"/><circle cx="32" cy="12" r="3" fill="#5CE1FF"/></svg>
+      <div><h2 id="infoTitle">PILOT</h2><span>FM MPX · RDS · Audio processor</span></div>
+      <button class="x" id="closeInfo" aria-label="Close">×</button>
+    </div>
+    <div class="row c2" style="gap:14px">
+      <div class="br"><div class="k" data-i>Installed version</div><div class="v" style="font-size:24px" id="curVer">0.1.0</div><div class="t">build 2026.11.27 · commit a1c9e3f</div></div>
+      <div class="br"><div class="k" data-i>Update channel</div>
+        <div class="seg" id="chanSeg" style="margin-top:8px"><button class="on" data-c="production">Production</button><button data-c="test">Test</button></div>
+        <div class="t" style="margin-top:6px" id="chanNote" data-i>Stable releases from the main branch</div></div>
+    </div>
+    <div style="margin-top:16px" id="updBox">
+      <div class="upd"><div class="tx"><b id="updTitle" data-i>Check for updates</b><div class="note" id="updSub" data-i>Last checked 2 hours ago</div></div><button class="btn" id="chk" data-i>Check now</button></div>
+    </div>
+    <div class="kv" style="margin-top:18px"><dt>DSP engine</dt><dd>pilot-dsp 0.1.0</dd><dt>RDS encoder</dt><dd>pilot-rds 0.1.0</dd><dt>Web UI</dt><dd>0.1.0</dd><dt>OS</dt><dd>Debian 13 (trixie) · LXC</dd><dt data-i>Licence</dt><dd data-i>Private use</dd></div>
+  </div>
+</div>
+<div class="demo" data-i>Design mockup · simulated signals</div>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- i18n ---------- */
+const NL={"On air":"In de lucht","Dashboard":"Dashboard","Input":"Invoer","Processing":"Bewerking","Stereo & MPX":"Stereo & MPX","Outputs":"Uitgangen","System":"Systeem","Backups":"Back-ups","Mail server":"Mailserver","Info & updates":"Info & updates","Channel":"Kanaal",
+"Signal chain":"Signaalketen","Click a stage to open its settings":"Klik op een stap om de instellingen te openen","Peak deviation":"Piekdeviatie","MPX power":"MPX-vermogen","Loudness":"Luidheid","Momentary":"Momentaan","Short-term":"Korte termijn","Integrated":"Geïntegreerd","target −9.0 · LRA 3.1 LU":"doel −9,0 · LRA 3,1 LU","Stereo image":"Stereobeeld","MPX spectrum":"MPX-spectrum","Pilot injection":"Pilotinjectie","RDS injection":"RDS-injectie","Stereo separation":"Stereoscheiding","Over-limit events":"Limietoverschrijdingen","last 24 h":"laatste 24 u","Levels":"Niveaus","Loudness history":"Luidheidsverloop","last 60 s":"laatste 60 s","Now on air":"Nu in de lucht",
+"Primary source":"Primaire bron","connected":"verbonden","Codec":"Codec","Buffer":"Buffer","Stream":"Stream","Uptime":"Uptime","Buffer fill":"Buffervulling","Reconnects (24 h)":"Herverbindingen (24 u)","Fallback & silence detection":"Terugval & stiltedetectie","Backup stream":"Back-upstream","Switch to backup on silence":"Overschakelen naar back-up bij stilte","Silence below −45 dBFS for 10 s":"Stilte onder −45 dBFS gedurende 10 s","Play local fallback file":"Lokaal terugvalbestand afspelen","Email alert on source change":"E-mailmelding bij bronwissel","Uses the mail server settings":"Gebruikt de mailserverinstellingen",
+"Preset":"Preset","Custom":"Eigen","Compare A/B":"Vergelijk A/B","Save preset":"Preset opslaan","Wideband, slow":"Breedband, traag","Target":"Doel","Max gain":"Max. versterking","Release":"Release","Gate":"Gate","Pre-emphasis & limiter":"Pre-emphasis & limiter","Pre-emphasis":"Pre-emphasis","Europe 50 µs · USA 75 µs":"Europa 50 µs · VS 75 µs","Off":"Uit","Ceiling":"Plafond","Lookahead":"Vooruitkijken","HF protect":"HF-bescherming","Final clipper":"Eindclipper","Distortion-controlled":"Vervormingsgestuurd","Drive":"Drive","Bass clip":"Basclip","Oversampling":"Oversampling","The clipper runs after pre-emphasis so peaks stay inside 75 kHz deviation without audible pumping.":"De clipper werkt na de pre-emphasis, zodat pieken binnen 75 kHz deviatie blijven zonder hoorbaar pompen.","Multiband compressor":"Multiband-compressor","5 bands · live gain reduction":"5 banden · live gainreductie","linked stereo":"stereo gekoppeld",
+"Stereo encoder":"Stereo-encoder","pilot locked":"pilot vergrendeld","Mode":"Modus","Auto (silence → mono)":"Auto (stilte → mono)","Pilot level":"Pilotniveau","Pilot phase":"Pilotfase","Width":"Breedte","Low-pass":"Laagdoorlaat","MPX safety limits":"MPX-veiligheidslimieten","hard limits":"harde limieten","Max deviation":"Max. deviatie","BS.412 MPX power limiter":"BS.412 MPX-vermogensbegrenzer","Integrates over 60 s, reduces gain smoothly":"Integreert over 60 s, verlaagt de versterking geleidelijk","Composite clipper":"Composietclipper","Last-resort peak control on the MPX signal":"Laatste piekbewaking op het MPX-signaal","Protect pilot & RDS":"Pilot & RDS beschermen","Notch filters keep clipper products out of 19 kHz and 57 kHz":"Notchfilters houden clipperproducten weg van 19 kHz en 57 kHz","Deviation (live)":"Deviatie (live)","MPX power (60 s)":"MPX-vermogen (60 s)",
+"Receiver preview":"Ontvangervoorbeeld","What a car radio shows right now":"Wat een autoradio nu toont","Group sequence":"Groepsvolgorde","live transmit order":"live zendvolgorde","Station identity":"Zenderidentiteit","Traffic programme":"Verkeersprogramma","Traffic announcement now":"Verkeersbericht nu","Clock time from NTP":"Kloktijd via NTP","Alternative frequencies":"Alternatieve frequenties","+ Add":"+ Toevoegen","Dynamic RadioText":"Dynamische RadioText","from stream metadata":"uit streammetadata","Template":"Sjabloon","When no metadata":"Zonder metadata","Tag artist and title for receivers":"Artiest en titel markeren voor ontvangers","Dynamic PS":"Dynamische PS","Scroll artist in PS (not recommended while driving)":"Artiest door PS laten lopen (afgeraden tijdens rijden)","RDS2 station logo":"RDS2-zenderlogo","Injection":"Injectie",
+"Transmission path":"Zendpad","off-air monitor":"off-air monitor","To uMPX decoder at the transmitter":"Naar uMPX-decoder bij de zender","Target":"Doel","Quality":"Kwaliteit","Packet loss":"Pakketverlies","Round trip":"Rondreistijd","Sound card":"Geluidskaart","Composite MPX at 192 kHz":"Composiet-MPX op 192 kHz","Device":"Apparaat","Output level":"Uitgangsniveau","Signal":"Signaal","Test transmitter (low power)":"Testzender (laag vermogen)","Frequency":"Frequentie","Gain":"Versterking","Processed audio back to Icecast":"Bewerkte audio terug naar Icecast","Mount":"Mount","Listeners":"Luisteraars",
+"Last backup":"Laatste back-up","today · incremental · 184 kB":"vandaag · incrementeel · 184 kB","Schedule":"Planning","Full":"Volledig","Sunday 02:00":"Zondag 02:00","Incremental":"Incrementeel","Daily 03:00":"Dagelijks 03:00","Keep":"Bewaren","8 full · 30 incremental":"8 volledig · 30 incrementeel","Run now":"Nu uitvoeren","Full backup":"Volledige back-up","Remote locations":"Externe locaties","+ Add location":"+ Locatie toevoegen","Name":"Naam","Protocol":"Protocol","Path":"Pad","Test":"Test","unencrypted":"onversleuteld","Restore points":"Herstelpunten","from all remote locations":"van alle externe locaties","Date":"Datum","Size":"Grootte","Location":"Locatie","incremental":"incrementeel","Restore":"Herstellen",
+"SMTP server":"SMTP-server","Encryption":"Versleuteling","Authentication":"Authenticatie","None":"Geen","Username":"Gebruikersnaam","Password":"Wachtwoord","From address":"Afzender","Send alerts to":"Meldingen naar","Send test email":"Testmail versturen","Save":"Opslaan","Alerts":"Meldingen","Input lost or silent":"Invoer weg of stil","Over-deviation or MPX power exceeded":"Overdeviatie of MPX-vermogen overschreden","MicroMPX link down":"MicroMPX-verbinding weg","Backup failed":"Back-up mislukt","Update available":"Update beschikbaar","Certificates are verified by default. Use a self-signed certificate only on a trusted network.":"Certificaten worden standaard gecontroleerd. Gebruik een zelfondertekend certificaat alleen op een vertrouwd netwerk.",
+"Installed version":"Geïnstalleerde versie","Update channel":"Updatekanaal","Stable releases from the main branch":"Stabiele releases uit de main-branch","Pre-releases from the test branch":"Pre-releases uit de test-branch","Check for updates":"Controleren op updates","Last checked 2 hours ago":"2 uur geleden gecontroleerd","Check now":"Nu controleren","Licence":"Licentie","Private use":"Eigen gebruik","Design mockup · simulated signals":"Ontwerpschets · gesimuleerde signalen","within limit":"binnen limiet","near limit":"bij limiet",
+"Checking…":"Controleren…","Version 0.1.1 is available":"Versie 0.1.1 is beschikbaar","Install update":"Update installeren","Installing…":"Installeren…","Updated to 0.1.1. Restart complete.":"Bijgewerkt naar 0.1.1. Herstart voltooid.","You are on the latest version":"Je hebt de nieuwste versie","Downloading, verifying, restarting services":"Downloaden, controleren, services herstarten"};
+let lang='en'; try{lang=localStorage.getItem('pl-lang')||'en'}catch(e){}
+const tr=s=>lang==='nl'?(NL[s]||s):s;
+function applyLang(){
+  $$('[data-i]').forEach(el=>{ if(el.dataset.en===undefined) el.dataset.en=el.textContent.trim(); el.textContent=tr(el.dataset.en); });
+  $$('.lang button').forEach(b=>b.classList.toggle('on',b.dataset.l===lang));
+  document.documentElement.lang=lang; setTitle();
+}
+$$('.lang button').forEach(b=>b.onclick=()=>{lang=b.dataset.l;try{localStorage.setItem('pl-lang',lang)}catch(e){};applyLang()});
+
+/* ---------- routing ---------- */
+const VIEWS={dashboard:'Dashboard',input:'Input',processing:'Processing',stereo:'Stereo & MPX',rds:'RDS / RDS2',outputs:'Outputs',backup:'Backups',mail:'Mail server'};
+let cur='dashboard';
+function setTitle(){ $('#title').textContent=tr(VIEWS[cur]); $('#crumb').textContent=(['backup','mail'].includes(cur)?tr('System'):'Program 1 · 98.4 MHz'); }
+function route(){ const h=location.hash.slice(1); cur=VIEWS[h]?h:'dashboard';
+  $$('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+cur));
+  $$('.nav a').forEach(a=>a.classList.toggle('on',a.dataset.v===cur)); setTitle(); sizeAll(); }
+addEventListener('hashchange',route);
+
+/* ---------- chain ---------- */
+const STAGES=[['Source','Icecast','AAC 128k','input'],['Decode','SRC 48k','-0.0 dB','input'],['Dynamics','AGC','-3.2 dB','processing',1],['Dynamics','Multiband 5B','-4.8 dB','processing',1],['EQ','Pre-emph','50 µs','processing'],['Peak','Limiter','-1.9 dB','processing',1],['Peak','Clipper','1.8 dB','processing',1],['Stereo','Encoder','pilot 9%','stereo','','mpx'],['Data','RDS/RDS2','4.0%','rds','','mpx'],['Safety','BS.412','+2.7 dBr','stereo',1,'mpx'],['Out','MicroMPX','320k','outputs','','out']];
+function buildChain(el){ el.innerHTML=STAGES.map((s,i)=>(i?'<div class="wire"></div>':'')+`<div class="node ${s[5]||''}" data-go="${s[3]}" tabindex="0"><div class="k">${s[0]}</div><div class="n">${s[1]}</div><div class="v" data-sv="${i}">${s[2]}</div>${s[4]?`<div class="gr"><span data-sg="${i}"></span></div>`:''}</div>`).join('');
+  el.querySelectorAll('.node').forEach(n=>{n.onclick=()=>location.hash=n.dataset.go;n.onkeydown=e=>{if(e.key==='Enter')location.hash=n.dataset.go}}); }
+buildChain($('#chain')); buildChain($('#chain2'));
+
+/* ---------- vu ---------- */
+function vuCol(k,cls){return `<div class="vcol"><div class="vtrack">${[.25,.5,.75].map(t=>`<div class="tick" style="bottom:${t*100}%"></div>`).join('')}<div class="f ${cls}"></div><div class="pk"></div></div><div class="k">${k}</div><div class="n">-∞</div></div>`}
+$('#vuDash').innerHTML=vuCol('IN L','l')+vuCol('IN R','r')+vuCol('AGC','gr')+vuCol('OUT L','l')+vuCol('OUT R','r');
+
+/* ---------- bands ---------- */
+const BANDS=[['Sub','20–100 Hz',-18,4,30,300],['Low','100–400 Hz',-20,3,20,250],['Mid','400 Hz–2.5 kHz',-22,3,10,180],['Presence','2.5–6 kHz',-24,2.5,5,120],['Air','6–15 kHz',-26,2,2,80]];
+$('#bands').innerHTML=BANDS.map((b,i)=>`<div class="band"><div><h4>${b[0]}</h4><div class="rng">${b[1]}</div></div><div class="grm"><div class="vtrack"><div class="f" data-bl="${i}"></div></div><div class="vtrack"><div class="f gr" data-bg="${i}"></div></div></div>
+ <div class="sl"><div><label for="b${i}t">Threshold</label><output>${b[2]} dB</output></div><input type="range" id="b${i}t" min="-40" max="0" value="${b[2]}"></div>
+ <div class="sl"><div><label for="b${i}r">Ratio</label><output>${b[3]}:1</output></div><input type="range" id="b${i}r" min="1" max="10" step=".5" value="${b[3]}"></div>
+ <div class="sl"><div><label for="b${i}a">Attack</label><output>${b[4]} ms</output></div><input type="range" id="b${i}a" min="1" max="50" value="${b[4]}"></div></div>`).join('');
+
+/* ---------- sliders ---------- */
+function fillRange(r){const p=(r.value-r.min)/(r.max-r.min)*100;r.style.setProperty('--p',p+'%')}
+$$('input[type=range]').forEach(r=>{fillRange(r);r.addEventListener('input',()=>{fillRange(r);const o=r.parentElement.querySelector('output')||r.closest('.sl').querySelector('output');if(o){const unit=o.textContent.replace(/^[-+\d.,:]+\s?/,'');const v=+r.value;o.textContent=(o.textContent.includes(':1')?v+':1':(unit.startsWith('dBr')&&v>0?'+':'')+(Number.isInteger(+r.step||1)?v:v.toFixed(1))+(unit&&!o.textContent.includes(':1')?' '+unit:''))}})});
+$$('.seg').forEach(s=>s.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;s.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b))}));
+
+/* ---------- gauges ---------- */
+function gauge(svg,limFrac,col){svg.innerHTML=`<defs><linearGradient id="g${svg.id}" x1="0" x2="1"><stop offset="0" stop-color="#1BB7D8"/><stop offset=".7" stop-color="#5CE1FF"/><stop offset=".9" stop-color="#FFB547"/><stop offset="1" stop-color="#FF4D6A"/></linearGradient></defs>
+ <path d="M20 105 A80 80 0 0 1 180 105" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="12" stroke-linecap="round"/>
+ <path class="arc" d="M20 105 A80 80 0 0 1 180 105" fill="none" stroke="url(#g${svg.id})" stroke-width="12" stroke-linecap="round" pathLength="100" stroke-dasharray="0 100" style="filter:drop-shadow(0 0 6px ${col})"/>
+ ${(()=>{const a=Math.PI*(1-limFrac),x=100+80*Math.cos(a),y=105-80*Math.sin(a),x2=100+96*Math.cos(a),y2=105-96*Math.sin(a);return `<line x1="${x}" y1="${y}" x2="${x2}" y2="${y2}" stroke="#FF4D6A" stroke-width="3" stroke-linecap="round"/>`})()}
+ <line class="needle" x1="100" y1="105" x2="100" y2="40" stroke="#fff" stroke-width="2" stroke-linecap="round" style="transform-origin:100px 105px"/><circle cx="100" cy="105" r="5" fill="#fff"/>`}
+gauge($('#devG'),75/100,'#5CE1FF'); gauge($('#mpxG'),(3+6)/15,'#9D7BFF');
+function setGauge(svg,frac){frac=Math.max(0,Math.min(1,frac));svg.querySelector('.arc').setAttribute('stroke-dasharray',`${frac*100} 100`);svg.querySelector('.needle').style.transform=`rotate(${-90+frac*180}deg)`}
+
+/* ---------- canvases ---------- */
+const DPR=Math.min(2,devicePixelRatio||1);
+function fit(c){const r=c.getBoundingClientRect();if(!r.width)return null;const w=Math.round(r.width*DPR),h=Math.round(r.height*DPR);if(c.width!==w||c.height!==h){c.width=w;c.height=h}return c.getContext('2d')}
+function sizeAll(){['#spec','#gonio','#lufsPlot','#xover'].forEach(s=>fit($(s)))}
+addEventListener('resize',sizeAll);
+
+let t=0; const lufsHist=[]; let gHist=[];
+const noise=(x)=>Math.sin(x*1.7)*.5+Math.sin(x*3.1+1)*.3+Math.sin(x*7.3+2)*.2;
+function drawSpec(ctx,c){const W=c.width,H=c.height;ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='rgba(120,160,255,.10)';ctx.lineWidth=1;ctx.font=`${10*DPR}px JetBrains Mono, monospace`;ctx.fillStyle='#6F81A6';
+  for(let k=0;k<=64;k+=8){const x=k/64*W;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H-14*DPR);ctx.stroke();ctx.fillText(k+'k',x+3*DPR,H-3*DPR)}
+  for(let d=0;d<=4;d++){const y=d/4*(H-14*DPR);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+  const N=320,pts=[];
+  for(let i=0;i<N;i++){const f=i/N*64;let a=-90;
+    if(f<15.5)a=-22-f*1.3+noise(f*.9+t*2)*7;
+    else if(f>22.5&&f<53.5){const d=Math.abs(f-38);a=-34-(15-d)*0.9*(d<15?1:0)+noise(d*.9+t*2.3)*6;if(d<.6)a=-70}
+    else if(f>54.6&&f<59.4)a=-46+noise(f*3+t*5)*3-Math.abs(f-57)*3;
+    if(Math.abs(f-19)<.25)a=-14;
+    a+= (Math.random()-.5)*2; pts.push([i/(N-1)*W,(Math.min(0,Math.max(-90,a))/-90)*(H-14*DPR)]);}
+  const grad=ctx.createLinearGradient(0,0,W,0);grad.addColorStop(0,'#5CE1FF');grad.addColorStop(.24,'#5CE1FF');grad.addColorStop(.3,'#ffffff');grad.addColorStop(.36,'#FF7AC6');grad.addColorStop(.83,'#FF7AC6');grad.addColorStop(.86,'#9D7BFF');grad.addColorStop(1,'#9D7BFF');
+  ctx.beginPath();ctx.moveTo(0,H-14*DPR);pts.forEach(p=>ctx.lineTo(p[0],p[1]));ctx.lineTo(W,H-14*DPR);ctx.closePath();
+  const fill=ctx.createLinearGradient(0,0,0,H);fill.addColorStop(0,'rgba(92,225,255,.35)');fill.addColorStop(1,'rgba(92,225,255,0)');ctx.fillStyle=fill;ctx.fill();
+  ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.strokeStyle=grad;ctx.lineWidth=1.6*DPR;ctx.shadowColor='#5CE1FF';ctx.shadowBlur=8*DPR;ctx.stroke();ctx.shadowBlur=0;
+  const px=19/64*W;ctx.fillStyle='#fff';ctx.shadowColor='#fff';ctx.shadowBlur=14*DPR;ctx.fillRect(px-1*DPR,(14/90)*(H-14*DPR),2*DPR,H);ctx.shadowBlur=0;}
+function drawGonio(ctx,c,corr){const W=c.width,H=c.height,cx=W/2,cy=H/2,R=W*.46;
+  ctx.fillStyle='rgba(4,7,14,.25)';ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(120,160,255,.18)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx,cy-R);ctx.lineTo(cx,cy+R);ctx.moveTo(cx-R,cy);ctx.lineTo(cx+R,cy);ctx.stroke();
+  ctx.fillStyle='#6F81A6';ctx.font=`${9*DPR}px JetBrains Mono`;ctx.fillText('M',cx+4*DPR,cy-R+11*DPR);ctx.fillText('L',cx-R*.72,cy-R*.72);ctx.fillText('R',cx+R*.66,cy-R*.72);
+  for(let i=0;i<260;i++){const m=(Math.random()+Math.random()+Math.random()-1.5)*.7,s=(Math.random()-.5)*(1-corr)*.9;
+    const x=cx+s*R,y=cy-m*R*.9; ctx.fillStyle=i%2?'rgba(92,225,255,.7)':'rgba(157,123,255,.6)';ctx.fillRect(x,y,1.6*DPR,1.6*DPR)}}
+function drawLufs(ctx,c){const W=c.width,H=c.height;ctx.clearRect(0,0,W,H);const lo=-20,hi=-4,y=v=>(hi-v)/(hi-lo)*H;
+  ctx.strokeStyle='rgba(120,160,255,.10)';ctx.fillStyle='#6F81A6';ctx.font=`${9*DPR}px JetBrains Mono`;
+  [-6,-9,-12,-15,-18].forEach(v=>{ctx.beginPath();ctx.moveTo(0,y(v));ctx.lineTo(W,y(v));ctx.stroke();ctx.fillText(v,2*DPR,y(v)-2*DPR)});
+  ctx.strokeStyle='rgba(255,181,71,.6)';ctx.setLineDash([4*DPR,4*DPR]);ctx.beginPath();ctx.moveTo(0,y(-9));ctx.lineTo(W,y(-9));ctx.stroke();ctx.setLineDash([]);
+  if(lufsHist.length<2)return; const n=lufsHist.length;
+  ctx.beginPath();lufsHist.forEach((v,i)=>{const x=W-(n-1-i)/240*W;i?ctx.lineTo(x,y(v)):ctx.moveTo(x,y(v))});
+  ctx.strokeStyle='#5CE1FF';ctx.lineWidth=1.6*DPR;ctx.stroke();
+  ctx.lineTo(W,H);ctx.lineTo(W-(n-1)/240*W,H);ctx.closePath();const f=ctx.createLinearGradient(0,0,0,H);f.addColorStop(0,'rgba(92,225,255,.25)');f.addColorStop(1,'rgba(92,225,255,0)');ctx.fillStyle=f;ctx.fill();
+  const lv=lufsHist[n-1];ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(W-2*DPR,y(lv),3*DPR,0,7);ctx.fill();}
+function drawXover(ctx,c,grs){const W=c.width,H=c.height;ctx.clearRect(0,0,W,H);const fx=f=>Math.log10(f/20)/Math.log10(20000/20)*W;
+  ctx.strokeStyle='rgba(120,160,255,.10)';ctx.fillStyle='#6F81A6';ctx.font=`${9*DPR}px JetBrains Mono`;
+  [50,100,200,500,1000,2000,5000,10000].forEach(f=>{const x=fx(f);ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();ctx.fillText(f>=1000?f/1000+'k':f,x+2*DPR,H-3*DPR)});
+  const edges=[20,100,400,2500,6000,15000],cols=['#5CE1FF','#6FC8FF','#8AA8FF','#9D7BFF','#C78BFF'];
+  for(let i=0;i<5;i++){const x0=fx(edges[i]),x1=fx(edges[i+1]),g=grs[i]||0,top=H*.18+g*H*.06;
+    const gr=ctx.createLinearGradient(0,top,0,H);gr.addColorStop(0,cols[i]+'66');gr.addColorStop(1,cols[i]+'00');ctx.fillStyle=gr;
+    ctx.beginPath();ctx.moveTo(x0,H);ctx.bezierCurveTo(x0+8*DPR,top,x0+8*DPR,top,x0+16*DPR,top);ctx.lineTo(x1-16*DPR,top);ctx.bezierCurveTo(x1-8*DPR,top,x1-8*DPR,top,x1,H);ctx.fill();
+    ctx.strokeStyle=cols[i];ctx.lineWidth=1.5*DPR;ctx.stroke();
+    ctx.fillStyle='#E8F1FF';ctx.font=`${10*DPR}px JetBrains Mono`;ctx.fillText('-'+g.toFixed(1)+' dB',x0+18*DPR,top-6*DPR);}}
+
+/* ---------- RDS ---------- */
+const SONGS=[['Dua Lipa','Houdini'],['Kensington','Streets'],['Miley Cyrus','Flowers'],['Davina Michelle','Duurt Te Lang']];
+let song=0,psStep=0; const PS=['RADIO 1 ','98.4 FM ','HITS!   ','RADIO 1 '];
+const GROUPS=['0A','0A','2A','0A','4A','0A','2A','11A','0A','2A','14A','RT+'];
+$('#grp').innerHTML=GROUPS.map(g=>`<span>${g}</span>`).join('');
+function rdsTick(){const tpl=$('#r-tpl').value;const s=SONGS[song];const rt=tpl.replace('{artist}',s[0]).replace('{title}',s[1]);
+  $('#rtDash').textContent=rt;$('#rtRds').textContent=rt;
+  const ps=($('#t-dps').checked?PS[psStep%PS.length]:($('#r-ps').value||'').padEnd(8).slice(0,8));$('#psDash').textContent=ps;$('#psRds').textContent=ps;}
+setInterval(()=>{psStep++;rdsTick()},2200); setInterval(()=>{song=(song+1)%SONGS.length;rdsTick()},9000);
+['#r-ps','#r-tpl','#t-dps'].forEach(s=>$(s).addEventListener('input',rdsTick));
+let gi=0;setInterval(()=>{const sp=$$('#grp span');sp.forEach((x,i)=>x.classList.toggle('hot',i===gi));gi=(gi+1)%sp.length},180);
+
+/* ---------- loop ---------- */
+let pkD=0,pkHold=0; const peaks={};
+function frame(){t+=0.016;
+  const prog=.82+noise(t*1.3)*.1+(Math.random()-.5)*.04;
+  const L=prog+noise(t*2.1)*.05, R=prog+noise(t*2.3+4)*.05;
+  // deviation & mpx
+  const dev=Math.min(75.2,66+noise(t*4)*6+Math.random()*3.5); pkD=Math.max(dev,pkD-0.08);
+  $('#devV').textContent=dev.toFixed(1); setGauge($('#devG'),dev/100);
+  const tag=$('#devTag');const near=dev>74.5;tag.className='tag '+(near?'warn':'ok');tag.dataset.en=near?'near limit':'within limit';tag.textContent=tr(tag.dataset.en);
+  const mpx=2.55+noise(t*.3)*.25; $('#mpxV').textContent=(mpx>0?'+':'')+mpx.toFixed(1); setGauge($('#mpxG'),(mpx+6)/15);
+  $('#devBar').style.width=dev+'%';$('#devPk').style.left=pkD+'%';$('#mpxBar').style.width=((mpx+6)/15*100)+'%';
+  // lufs
+  const M=-9.2+noise(t*1.1)*1.4, S=-9.4+noise(t*.4)*.5;
+  $('#lufsM').firstChild.textContent=M.toFixed(1);$('#lufsS').firstChild.textContent=S.toFixed(1);
+  if(Math.round(t*60)%15===0){lufsHist.push(S+noise(t*3)*.6);if(lufsHist.length>240)lufsHist.shift()}
+  // vu
+  const vals=[L*.92,R*.9,.25+noise(t*.5)*.08,Math.min(.97,L),Math.min(.97,R)];
+  $$('#vuDash .vcol').forEach((col,i)=>{const v=Math.max(0,Math.min(1,vals[i]));const f=col.querySelector('.f');f.style.height=(v*100)+'%';
+    const pk=col.querySelector('.pk');peaks[i]=Math.max(v,(peaks[i]||0)-.004);pk.style.bottom=(i===2?(100-peaks[i]*100):peaks[i]*100)+'%';
+    if(i===2){pk.style.display='none'}
+    col.querySelector('.n').textContent=i===2?('-'+(v*12).toFixed(1)):((v-1)*30).toFixed(1);});
+  // bands & chain
+  const grs=BANDS.map((b,i)=>Math.max(0,3+noise(t*(1+i*.4)+i)*2.5));
+  $$('[data-bl]').forEach((f,i)=>f.style.height=(55+noise(t*2+i)*25)+'%');
+  $$('[data-bg]').forEach((f,i)=>f.style.height=(grs[i]/10*100)+'%');
+  $$('[data-sg]').forEach(s=>s.style.width=(25+noise(t*2+ +s.dataset.sg)*20)+'%');
+  if(Math.round(t*60)%6===0){$$('[data-sv="2"]').forEach(e=>e.textContent=(-3.2+noise(t)*.6).toFixed(1)+' dB');$$('[data-sv="3"]').forEach(e=>e.textContent=(-grs[2]).toFixed(1)+' dB');$$('[data-sv="9"]').forEach(e=>e.textContent='+'+mpx.toFixed(1)+' dBr')}
+  // canvases (only visible)
+  if(cur==='dashboard'){const s=fit($('#spec'));s&&drawSpec(s,$('#spec'));const corr=.62+noise(t*.7)*.15;const g=fit($('#gonio'));g&&drawGonio(g,$('#gonio'),corr);$('#corr').textContent=(corr>0?'+':'')+corr.toFixed(2);const l=fit($('#lufsPlot'));l&&drawLufs(l,$('#lufsPlot'));}
+  if(cur==='processing'){const x=fit($('#xover'));x&&drawXover(x,$('#xover'),grs)}
+  if(!RM)requestAnimationFrame(frame);
+}
+for(let i=0;i<240;i++){lufsHist.push(-9.4+noise(i*.13)*.7)}
+/* ---------- clock ---------- */
+setInterval(()=>{$('#clock').textContent=new Date().toLocaleTimeString('nl-NL',{hour12:false})},1000);
+
+/* ---------- info modal ---------- */
+const info=$('#info');
+$('#openInfo').onclick=()=>{info.hidden=false;$('#closeInfo').focus()};
+$('#closeInfo').onclick=()=>info.hidden=true; info.onclick=e=>{if(e.target===info)info.hidden=true};
+addEventListener('keydown',e=>{if(e.key==='Escape')info.hidden=true});
+$('#chanSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const c=b.dataset.c;$('#chanChip').textContent=c;
+  const n=$('#chanNote');n.dataset.en=c==='test'?'Pre-releases from the test branch':'Stable releases from the main branch';n.textContent=tr(n.dataset.en);resetUpd()});
+function setU(title,sub,btn,btnPri){const T=$('#updTitle'),S=$('#updSub'),B=$('#chk');T.dataset.en=title;T.textContent=tr(title);S.dataset.en=sub;S.textContent=tr(sub);if(btn){B.hidden=false;B.dataset.en=btn;B.textContent=tr(btn);B.className='btn'+(btnPri?' pri':'')}else B.hidden=true}
+let stage=0; function resetUpd(){stage=0;setU('Check for updates','Last checked 2 hours ago','Check now');const p=$('#updBox .prog');p&&p.remove()}
+$('#chk').onclick=()=>{
+  if(stage===0){setU('Checking…','',null);setTimeout(()=>{stage=1;setU('Version 0.1.1 is available',$('#chanChip').textContent==='test'?'0.1.1-rc.2 · RDS2 logo transfer, clipper tuning':'0.1.1 · clipper tuning, MicroMPX reconnect fix','Install update',true)},1100)}
+  else if(stage===1){stage=2;setU('Installing…','Downloading, verifying, restarting services',null);const p=document.createElement('div');p.className='prog';p.innerHTML='<span></span>';$('#updBox .upd').after(p);let v=0;const iv=setInterval(()=>{v+=4;p.firstChild.style.width=v+'%';if(v>=100){clearInterval(iv);stage=3;setU('Updated to 0.1.1. Restart complete.','',null);$('#curVer').textContent='0.1.1';$('.infobtn .ver').textContent='v0.1.1';$('.infobtn .dot').hidden=true}},90)}
+};
+
+applyLang(); route(); rdsTick(); requestAnimationFrame(frame);
+})();
+</script>

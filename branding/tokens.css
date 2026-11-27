@@ -1,0 +1,59 @@
+/* PILOT — design tokens (huisstijl v1.0)
+   Single dark "control room" theme. Import this file first in every UI. */
+@import url("https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
+:root {
+  color-scheme: dark;
+
+  /* Ground & surfaces */
+  --pl-void:      #04070E;  /* page background */
+  --pl-deep:      #070C18;  /* sidebar, wells */
+  --pl-surface:   rgba(20, 30, 54, .55);  /* glass panels */
+  --pl-surface-2: rgba(32, 46, 80, .55);  /* raised / hover */
+  --pl-line:      rgba(120, 160, 255, .14);
+  --pl-line-2:    rgba(120, 160, 255, .28);
+
+  /* Text */
+  --pl-text:      #E8F1FF;
+  --pl-text-2:    #A9B8D6;
+  --pl-text-3:    #6F81A6;
+
+  /* Brand */
+  --pl-ion:       #5CE1FF;  /* primary accent: the 19 kHz pilot, links, active */
+  --pl-plasma:    #9D7BFF;  /* secondary: RDS, data, second channel */
+  --pl-grad:      linear-gradient(135deg, #5CE1FF 0%, #9D7BFF 100%);
+  --pl-glow:      0 0 24px rgba(92, 225, 255, .35);
+
+  /* Semantic (meters & status) */
+  --pl-ok:        #3DFFB0;
+  --pl-warn:      #FFB547;
+  --pl-crit:      #FF4D6A;
+
+  /* Channels */
+  --pl-left:      #5CE1FF;
+  --pl-right:     #FF7AC6;
+
+  /* Type */
+  --pl-font-display: "Unbounded", "Segoe UI", system-ui, sans-serif;
+  --pl-font-body:    "Manrope", "Segoe UI", system-ui, sans-serif;
+  --pl-font-mono:    "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+  --pl-fs-xs: .6875rem;  /* 11 labels, uppercase +0.12em */
+  --pl-fs-sm: .8125rem;  /* 13 secondary */
+  --pl-fs-md: .9375rem;  /* 15 body */
+  --pl-fs-lg: 1.125rem;  /* 18 panel titles */
+  --pl-fs-xl: 1.625rem;  /* 26 page titles */
+  --pl-fs-num: 2.25rem;  /* 36 hero readouts (mono) */
+
+  /* Shape & space */
+  --pl-r-sm: 8px;
+  --pl-r-md: 14px;
+  --pl-r-lg: 20px;
+  --pl-space: 4px; /* multiples: 8 12 16 24 32 */
+  --pl-blur: blur(18px) saturate(140%);
+
+  /* Motion */
+  --pl-ease: cubic-bezier(.2, .8, .2, 1);
+  --pl-fast: 140ms;
+  --pl-slow: 420ms;
+}
