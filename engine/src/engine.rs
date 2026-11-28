@@ -141,7 +141,8 @@ fn run(
                     cfg = *c;
                     if cfg.rds.dynamic_rt && !last_meta.title.is_empty() {
                         chain.set_radiotext(&last_meta.render(&cfg.rds.rt_template));
-                    } else if !cfg.rds.dynamic_rt {
+                    } else {
+                        // Static text, or dynamic mode without a stream title yet.
                         chain.set_radiotext(&cfg.rds.rt);
                     }
                     if outputs_changed {
