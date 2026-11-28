@@ -1,0 +1,35 @@
+[Unit]
+Description=PILOT FM MPX / RDS audio processor
+Documentation=https://github.com/rhisijmuiden/fm-mpx-processor
+After=network-online.target sound.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pilot
+Group=pilot
+SupplementaryGroups=audio
+Environment=PILOT_LISTEN=0.0.0.0:8080
+Environment=PILOT_DB=/var/lib/pilot/pilot.db
+Environment=PILOT_CHANNEL=test
+Environment=RUST_LOG=info
+EnvironmentFile=-/etc/pilot/pilot.env
+ExecStart=/usr/local/bin/pilot serve
+Restart=always
+RestartSec=2
+# Realtime audio thread (SCHED_FIFO) and locked memory.
+LimitRTPRIO=95
+LimitMEMLOCK=infinity
+Nice=-10
+StateDirectory=pilot
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/lib/pilot
+DeviceAllow=char-alsa rw
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+
+[Install]
+WantedBy=multi-user.target
